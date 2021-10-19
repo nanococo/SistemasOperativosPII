@@ -1,6 +1,7 @@
 #include <sys/shm.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
 int main(int argc, char **argv)
 {
