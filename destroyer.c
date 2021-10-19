@@ -8,12 +8,13 @@ int main(int argc, char **argv)
     {
         int id = atoi(argv[1]);
 
+        // https://linux.die.net/man/2/shmctl
         // performs control operation on specified shared memory
         // IPC_RMID specifies that the shared memory should be destroyed
         // IMPORTANT: memory will not be destroyed until it has no attatched processes
         int deletion = shmctl(id, IPC_RMID, NULL);
-        
-        if (deletion < 0) 
+
+        if (deletion < 0)
         {
             printf("There was a problem deleting shared memory %d\n\n", id);
         }
@@ -21,7 +22,6 @@ int main(int argc, char **argv)
         {
             printf("Shared memory %d deleted successfully\n\n", id);
         }
-
     }
     else
     {
