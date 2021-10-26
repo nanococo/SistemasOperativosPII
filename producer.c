@@ -17,7 +17,7 @@ void dealocateMemory(int linesSize, int startIndex, int mem_id){
     }
 
 
-    printf("Succesfully dealocated memory for thread id =%u\n", pthread_self());
+    printf("Succesfully dealocated memory for thread id = %lu\n", pthread_self());
 
     int detach_status = shmdt(mem);
     if (detach_status < 0)
@@ -35,6 +35,7 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 
 
     for(int i=0; i<memLines; i++){
+        printf("%hu \n", mem[i]);
         if(mem[i]==1 || i==memLines-1){
             if(countEmpty>=linesSize && countEmpty != 0){
                 //This means a succesful block was found. Proceed to fill it in and break out of loop
@@ -43,7 +44,7 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
                     mem[j]=1;
                 }
 
-                printf("Succesfully alocated memory for thread id =%u witn %d lines\n", pthread_self(), linesSize);
+                printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
 
                 *algorithmResult = 1;
                 *startIndex = countStartIndex;
@@ -131,10 +132,10 @@ void *findSpace(void *array){
     //--------------------------------------------------------------------------------------------
 
     if(algorithmResult!=1){
-        printf("Thread id =%u did not find space. Needed %d\n", pthread_self(), linesSize);
+        printf("Thread id = %lu did not find space. Needed %d\n", pthread_self(), linesSize);
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
-        printf("Thread id =%u sleeping for %d\n", pthread_self(), sleepTime);
+        printf("Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
     }
 
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
             pthread_create(&thread_id, NULL, findSpace, (void *)arguments);
             pthread_detach(thread_id); //I don't care about what this thread does, so I detatch it 
                                        //and when it dies it returns resources to the system
-            printf("New Thread created with id %u\n", pthread_self());
+            printf("New Thread created with id %lu\n", pthread_self());
             printf("Creator main method sleeping for %d seconds\n", sleepTime);
             sleep(sleepTime);
         }
