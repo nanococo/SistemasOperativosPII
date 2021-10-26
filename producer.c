@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <time.h>
 
+//args must be mem_id, numberOfLines, algorithm
 int main(int argc, char **argv)
 {
     srand(time(0)); //This sets the random seed based on time
@@ -39,29 +40,29 @@ int main(int argc, char **argv)
 
 
     
-    // attach to the shared memory address
-    int mem_id = atoi(argv[1]);
-    short *mem = shmat(mem_id, NULL, 0);
+    // // attach to the shared memory address
+    // int mem_id = atoi(argv[1]);
+    // short *mem = shmat(mem_id, NULL, 0);
 
-    sem_t *mem_mutex = sem_open("Memory Mutex", 0);
-    sem_t *log_mutex = sem_open("Log Mutex", 0);
+    // sem_t *mem_mutex = sem_open("Memory Mutex", 0);
+    // sem_t *log_mutex = sem_open("Log Mutex", 0);
 
-    sem_wait(mem_mutex);
+    // sem_wait(mem_mutex);
 
-    // write in shared memory address
-    mem[0] = 8; // dummy test
+    // // write in shared memory address
+    // mem[0] = 8; // dummy test
 
-    sem_post(mem_mutex);
+    // sem_post(mem_mutex);
 
-    // sem_close(mem_mutex);
-    // sem_close(log_mutex);
+    // // sem_close(mem_mutex);
+    // // sem_close(log_mutex);
 
-    // detach from shared memory address
-    int detach_status = shmdt(mem);
-    if (detach_status < 0)
-    {
-        printf("Error detaching shared memory\n");
-    }
+    // // detach from shared memory address
+    // int detach_status = shmdt(mem);
+    // if (detach_status < 0)
+    // {
+    //     printf("Error detaching shared memory\n");
+    // }
     return 0;
 }
 
@@ -69,6 +70,7 @@ int main(int argc, char **argv)
 //It receives a parameter indicating the alogirthm that will be used 
 // 1 = First Fit; 2 = Best Fit; 3 = Worst Fit
 void *findSpace(void *array){
+
     //Algorithm retrieval
     int *threadParameters = (int *) array;
 
@@ -80,7 +82,7 @@ void *findSpace(void *array){
     int lowerTimeLimit = 20;
     int upperTimeLimit = 60;
 
-    //Actual values
+    //Actual random values
     int linesSize = getRandomBetweenTwoNumbers(lowerLinesLimit, upperLinesLimit);
     int sleepTime = getRandomBetweenTwoNumbers(lowerTimeLimit, upperTimeLimit);
 
@@ -90,20 +92,21 @@ void *findSpace(void *array){
     sem_t *mem_mutex = sem_open("Memory Mutex", 0);
     sem_wait(mem_mutex); // <-- Actual block
 
-    int algorithm = threadParameters[0];
+    int algorithm = threadParameters[0]; //get algorithm type received from CLI
     int algorithmResult = 0;
     int startIndex = 0;
 
+    //Calls algorithm based on cli argument
     switch(algorithm){
         case 1:
     int algorithmResult = 0;
             firstFit(linesSize, &algorithmResult, &startIndex, threadParameters[1], threadParameters[2]);
             break;
         case 2:
-            bestFit(linesSize, &algorithmResult, &startIndex, threadParameters[1]);
+            bestFit(linesSize, &algorithmResult, &startIndex, threadParameters[1], threadParameters[2]);
             break;
         case 3:
-            worstFit(linesSize, &algorithmResult, &startIndex, threadParameters[1]);
+            worstFit(linesSize, &algorithmResult, &startIndex, threadParameters[1], threadParameters[2]);
             break;
     }
 
@@ -118,6 +121,21 @@ void *findSpace(void *array){
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
     }
 
+
+    //CRITICAL SECTION 2 START 
+    //--------------------------------------------------------------------------------------------
+    //Here is where each thread will dealocate memory area. Only one thread is allowed to use the dealocation.
+    sem_wait(mem_mutex); // <-- Actual block
+
+    dealocateMemory(linesSize, startIndex, threadParameters[1]);
+
+    sem_post(mem_mutex); // <-- Semaphore release / unblock
+
+    //CRITICAL SECTION 2 END 
+    //--------------------------------------------------------------------------------------------
+
+
+
     return NULL; //Thread is detached so it will die and return resources
 }
 
@@ -125,9 +143,30 @@ int getRandomBetweenTwoNumbers(int lower, int upper){
     return (rand() % (upper - lower + 1)) + lower;
 }
 
+void dealocateMemory(int linesSize, int startIndex, int mem_id){
+    short *mem = shmat(mem_id, NULL, 0);
+
+    //set all blocks used back to zero
+    int index = startIndex;
+    for(int i = 0; i<linesSize; i++){
+        mem[index]=0;
+        index++;
+    }
+
+
+    printf("Succesfully dealocated\n");
+
+    int detach_status = shmdt(mem);
+    if (detach_status < 0)
+    {
+        printf("Error detaching shared memory\n");
+    }
+}
+
 void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
     short *mem = shmat(mem_id, NULL, 0);
 
+    int result = 0;
     int countEmpty = 0;
     int countStartIndex = 0;
 
@@ -140,6 +179,11 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
                 for(int j=countStartIndex; j<=countEmpty; j++){
                     mem[j]=1;
                 }
+
+                printf("Succesfully alocated\n");
+
+                *algorithmResult = 1;
+                *startIndex = countStartIndex;
 
                 break;
             } else {
@@ -156,15 +200,19 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
         }
     }
 
+    int detach_status = shmdt(mem);
+    if (detach_status < 0)
+    {
+        printf("Error detaching shared memory\n");
+    }
 
+    return result;
+}
 
+void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
     return 0;
 }
 
-void bestFit(int *linesSize, int *startIndex){
-    return 0;
-}
-
-void worstFit(int *linesSize, int *startIndex){
+void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
     return 0;
 }
