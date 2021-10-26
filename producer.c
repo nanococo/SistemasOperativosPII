@@ -35,8 +35,8 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 
 
     for(int i=0; i<memLines; i++){
-        printf("%hu \n", mem[i]);
-        if(mem[i]==1 || i==memLines-1){
+        //printf("%hu \n", mem[i]);
+        if(mem[i]==1 || i==memLines-1 || countEmpty>=linesSize){
             if(countEmpty>=linesSize && countEmpty != 0){
                 //This means a succesful block was found. Proceed to fill it in and break out of loop
 
@@ -167,8 +167,8 @@ int main(int argc, char **argv)
     srand(time(0)); //This sets the random seed based on time
     
     //Thread generation window 30s-60s
-    int lowerLifeLimit = 30;
-    int upperLifeLimit = 60;
+    int lowerLifeLimit = 10;
+    int upperLifeLimit = 15;
 
     //Algorithm to use for threads. Reads it from argv[3]. Must be numeric
     int algorithm = 0;
