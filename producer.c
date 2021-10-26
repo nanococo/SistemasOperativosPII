@@ -17,7 +17,7 @@ void dealocateMemory(int linesSize, int startIndex, int mem_id){
     }
 
 
-    printf("Succesfully dealocated\n");
+    printf("Succesfully dealocated memory for thread id =%u\n", pthread_self());
 
     int detach_status = shmdt(mem);
     if (detach_status < 0)
@@ -43,7 +43,7 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
                     mem[j]=1;
                 }
 
-                printf("Succesfully alocated\n");
+                printf("Succesfully alocated memory for thread id =%u witn %d lines\n", pthread_self(), linesSize);
 
                 *algorithmResult = 1;
                 *startIndex = countStartIndex;
@@ -131,8 +131,10 @@ void *findSpace(void *array){
     //--------------------------------------------------------------------------------------------
 
     if(algorithmResult!=1){
+        printf("Thread id =%u did not find space. Needed %d\n", pthread_self(), linesSize);
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
+        printf("Thread id =%u sleeping for %d\n", pthread_self(), sleepTime);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
     }
 
@@ -183,6 +185,8 @@ int main(int argc, char **argv)
             pthread_create(&thread_id, NULL, findSpace, (void *)arguments);
             pthread_detach(thread_id); //I don't care about what this thread does, so I detatch it 
                                        //and when it dies it returns resources to the system
+            printf("New Thread created with id %u\n", pthread_self());
+            printf("Creator main method sleeping for %d seconds\n", sleepTime);
             sleep(sleepTime);
         }
 
