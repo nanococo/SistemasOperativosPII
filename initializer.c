@@ -5,6 +5,11 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <time.h>
+#include <pthread.h>
+
+void create_shared_mem(int size);
+void create_log();
 
 int main(int argc, char **argv)
 {
@@ -12,28 +17,9 @@ int main(int argc, char **argv)
     {
         int lines = atoi(argv[1]);
         int size = sizeof(short) * lines;
-        printf("\nYou have requested %d lines\n", lines);
-        printf("Equivalent to %d bytes\n\n", size);
 
-        // https://man7.org/linux/man-pages/man2/shmget.2.html
-        // IPC_PRIVATE specifies that a new shared memory segment is wanted
-        // IPC_CREAT flag stops shmget from looking for memory with the specified id and instead creates new shared memory
-        // IPC_EXCL used with IPC_CREAT to ensure that shmget creates a new segment
-        int shm_key = shmget(IPC_PRIVATE, size, IPC_CREAT | IPC_EXCL | 0666);
-        printf("Shared memory ID: %d\n\n", shm_key);
-
-        // https://linux.die.net/man/2/shmdt
-        // attaches to shared memory
-        short *mem = shmat(shm_key, NULL, 0);
-        memset(mem, (short)0, size);
-
-        /*
-        Ask if log file needs to be shared or if it can be a regular file
-        https://linux.die.net/man/2/open
-        https://linux.die.net/man/2/close
-        https://linux.die.net/man/2/unlink
-        https://linuxhint.com/posix-shared-memory-c-programming/
-        */
+        create_shared_mem(size);
+        create_log();
 
         // creates semaphore for shared memory access
         // https://man7.org/linux/man-pages/man3/sem_open.3.html
@@ -42,27 +28,64 @@ int main(int argc, char **argv)
         // creates semaphore for log access
         sem_t *log_mutex = sem_open("Log Mutex", O_CREAT | O_EXCL, 0644, 1);
 
+        // creates semaphore for spy info
+        sem_t *spy_mutex = sem_open("Spy Mutex", O_CREAT | O_EXCL, 0644, 1);
+
         sem_close(mem_mutex);
         sem_close(log_mutex);
-
-        // Test code
-        // From here to the end of this if statement
-        // printf("Before procs.out call: mem[0] = %d\n\n", mem[0]);
-
-        // sleep(10);
-
-        // printf("After procs.out call: mem[0] = %d\n\n", mem[0]);
-
-        // int deletion = shmctl(shm_key, IPC_RMID, NULL);
-
-        // if (deletion < 0)
-        // {
-        //     printf("There was a problem deleting shared memory %d\n\n", shm_key);
-        // }
+        sem_close(spy_mutex);
     }
     else
     {
         printf("Missing line amount\nUsage:\n\t./init.out <line amount>\n\n");
     }
     return 0;
+}
+
+void create_shared_mem(int size)
+{
+    // https://man7.org/linux/man-pages/man2/shmget.2.html
+    // IPC_PRIVATE specifies that a new shared memory segment is wanted
+    // IPC_CREAT flag stops shmget from looking for memory with the specified id and instead creates new shared memory
+    // IPC_EXCL used with IPC_CREAT to ensure that shmget creates a new segment
+    int shm_key = shmget(IPC_PRIVATE, size, IPC_CREAT | IPC_EXCL | 0666);
+
+    // shared memory for program logic
+    int pid_size = sizeof(pthread_t);
+
+    int shm_exec_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
+    int shm_blocked_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
+    int shm_current_key = shmget(IPC_PRIVATE, pid_size, IPC_CREAT | IPC_EXCL | 0666);
+    printf("Destroyer params: %d %d %d %d", shm_key, shm_exec_key, shm_blocked_key, shm_current_key);
+
+    // https://linux.die.net/man/2/shmdt
+    // attaches to shared memory
+    short *mem = shmat(shm_key, NULL, 0);
+    memset(mem, (short)0, size);
+
+    short *exec_mem = shmat(shm_exec_key, NULL, 0);
+    memset(exec_mem, (pthread_t) 0, pid_size*40);
+
+    short *blocked_mem = shmat(shm_blocked_key, NULL, 0);
+    memset(blocked_mem, (pthread_t)0, pid_size*40);
+
+    short *current_mem = shmat(shm_current_key, NULL, 0);
+    memset(current_mem, (pthread_t)0, pid_size);
+}
+
+void create_log()
+{
+    time_t t = time(NULL);
+    // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
+    struct tm time = *localtime(&t);
+    char file_name[30] = "log_";
+
+    sprintf((char *) &file_name[4], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+    sprintf((char *) &file_name[23], ".txt");
+
+    printf(" %s\n", file_name);
+
+    FILE* file_ptr = fopen(file_name, "w");
+    fputs("File created", file_ptr);
+    fclose(file_ptr);
 }

@@ -13,4 +13,4 @@ dest:
 	gcc destroyer.c -lpthread -lrt -o dest.out
 
 clean:
-	rm *.out
+	rm *.out *.txt
