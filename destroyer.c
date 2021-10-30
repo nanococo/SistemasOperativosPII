@@ -2,16 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <pthread.h>
+#include <signal.h>
+#define ARRAY_SIZE 40
 
 void rm_shm(int shm_id);
 
 int main(int argc, char **argv)
 {
-    if (argc == 6)
+    if (argc == 7)
     {
-        // --------------------
-        // --- Kill threads ---
-        // --------------------
+        kill(atoi(argv[6]), SIGKILL);
 
         // Delete shared memory
         for (int i = 1; i < 5; i++)
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        printf("Missing memory IDs or log name\nUsage:\n\t./dest.out <memory IDs>, *, <log name>\n\n");
+        printf("Missing memory IDs, log name, or PID\nUsage:\n\t./dest.out <memory IDs>, *, <log name>, <PID>\n\n");
     }
     return 0;
 }
@@ -46,10 +47,33 @@ void rm_shm(int shm_id)
 
     if (deletion < 0)
     {
-        printf("There was a problem deleting shared memory %d\n\n", shm_id);
+        printf("There was a problem deleting shared memory %d\n", shm_id);
     }
     else
     {
-        printf("Shared memory %d deleted successfully\n\n", shm_id);
+        printf("Shared memory %d deleted successfully\n", shm_id);
     }
 }
+
+// void kill_thread(pthread_t pid)
+// {
+//     if (pid)
+//     {
+//         printf("Kill thread");
+//     }
+// }
+
+// void kill_threads(int exec_id, int blocked_id, int current_id)
+// {
+//     pthread_t *exec_mem = shmat(exec_id, NULL, 0);
+//     pthread_t *blocked_mem = shmat(blocked_id, NULL, 0);
+//     pthread_t *current_mem = shmat(current_id, NULL, 0);
+
+//     kill_thread(current_mem[0]);
+//     for (int i = 0; i < ARRAY_SIZE; i++)
+//     {
+//         kill_thread(exec_mem[i]);
+//         kill_thread(blocked_mem[i]);
+//     }
+// }
+
