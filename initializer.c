@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <time.h>
+
+void create_log();
 
 int main(int argc, char **argv)
 {
@@ -27,13 +30,8 @@ int main(int argc, char **argv)
         short *mem = shmat(shm_key, NULL, 0);
         memset(mem, (short)0, size);
 
-        /*
-        Ask if log file needs to be shared or if it can be a regular file
-        https://linux.die.net/man/2/open
-        https://linux.die.net/man/2/close
-        https://linux.die.net/man/2/unlink
-        https://linuxhint.com/posix-shared-memory-c-programming/
-        */
+        create_log();
+
 
         // creates semaphore for shared memory access
         // https://man7.org/linux/man-pages/man3/sem_open.3.html
@@ -65,4 +63,19 @@ int main(int argc, char **argv)
         printf("Missing line amount\nUsage:\n\t./init.out <line amount>\n\n");
     }
     return 0;
+}
+
+void create_log()
+{
+    time_t t = time(NULL);
+    // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
+    struct tm time = *localtime(&t);
+    char file_name[30] = "log_";
+
+    sprintf((char *) &file_name[4], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+    sprintf((char *) &file_name[23], ".txt");
+
+    FILE* file_ptr = fopen(file_name, "w");
+    fputs("File created", file_ptr);
+    fclose(file_ptr);
 }
