@@ -56,7 +56,7 @@ void create_shared_mem(int size)
     int shm_exec_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
     int shm_blocked_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
     int shm_current_key = shmget(IPC_PRIVATE, pid_size, IPC_CREAT | IPC_EXCL | 0666);
-    printf("Shared memory IDs: %d %d %d %d\n", shm_key, shm_exec_key, shm_blocked_key, shm_current_key);
+    printf("Destroyer params: %d %d %d %d", shm_key, shm_exec_key, shm_blocked_key, shm_current_key);
 
     // https://linux.die.net/man/2/shmdt
     // attaches to shared memory
@@ -82,6 +82,8 @@ void create_log()
 
     sprintf((char *) &file_name[4], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
     sprintf((char *) &file_name[23], ".txt");
+
+    printf(" %s\n", file_name);
 
     FILE* file_ptr = fopen(file_name, "w");
     fputs("File created", file_ptr);
