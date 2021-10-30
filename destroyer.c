@@ -8,9 +8,11 @@ int main(int argc, char **argv)
     if (argc == 2)
     {
         int shm_id = atoi(argv[1]);
+        char* file_name = argv[2];
 
         sem_unlink ("Memory Mutex");
         sem_unlink ("Log Mutex");
+        sem_unlink ("Spy Mutex");
 
 
         // https://linux.die.net/man/2/shmctl
@@ -27,6 +29,10 @@ int main(int argc, char **argv)
         {
             printf("Shared memory %d deleted successfully\n\n", shm_id);
         }
+
+
+        FILE* file_ptr = fopen(file_name, "a");
+        fclose(file_ptr);
     }
     else
     {
