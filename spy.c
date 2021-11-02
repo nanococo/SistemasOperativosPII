@@ -46,7 +46,7 @@ void printMemmory(pthread_t *mem, int memSize, sem_t *mutex)
     sem_wait(mutex);
     for (int line = 0; line < memSize; line++)
     {
-        printf("Line: %d -->  | %d | \n", line, mem[line]);
+        printf("Line: %d -->  | %lu | \n", line, mem[line]);
         printf(lineString);
     }
     sem_post(mutex);
@@ -56,7 +56,7 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
 {
     printf("Current Process in Memory: \n");
 
-    printf("%d \n", current_shm[0]);
+    printf("%lu \n", current_shm[0]);
 
     printf("Blocked Processes: \n");
 
@@ -65,7 +65,7 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
         pthread_t pid = blocked_shm[i];
         if (pid != 0)
         {
-            printf("%d \n", pid);
+            printf("%lu \n", pid);
         }
     }
 
@@ -76,7 +76,7 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
         pthread_t pid = exec_shm[i];
         if (pid != 0)
         {
-            printf("%d \n", pid);
+            printf("%lu \n", pid);
         }
     }
     
