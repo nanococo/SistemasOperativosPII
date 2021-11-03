@@ -140,8 +140,9 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
             }
             countEmpty++;
         }
+    }
 
-        if(maxSize != 0 && maxSize>=linesSize){
+    if(maxSize != 0 && maxSize>=linesSize){
             int numberOfLinesLoop = linesSize;
             int loopIndex = maxBlockIndex;
             while(numberOfLinesLoop>0){
@@ -159,8 +160,7 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
 
             *algorithmResult = 1;
             *startIndex = maxBlockIndex;
-        } 
-    }
+    } 
 }
 
 void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
@@ -192,27 +192,27 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
             }
             countEmpty++;
         }
+    }
+    
+    if(minSize != __INT_MAX__ && minSize>=linesSize){
+        int numberOfLinesLoop = linesSize;
+        int loopIndex = minBlockIndex;
+        while(numberOfLinesLoop>0){
+            mem[loopIndex] = 1;
+            numberOfLinesLoop--;
+            loopIndex++;
+        }
 
-        if(minSize != __INT_MAX__ && minSize>=linesSize){
-            int numberOfLinesLoop = linesSize;
-            int loopIndex = minBlockIndex;
-            while(numberOfLinesLoop>0){
-                mem[loopIndex] = 1;
-                numberOfLinesLoop--;
-                loopIndex++;
-            }
+        //Buffer        
+        char buffer[200];
 
-            //Buffer        
-            char buffer[200];
+        snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+        printf("%s", buffer);
+        create_log(buffer);
 
-            snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
-            printf("%s", buffer);
-            create_log(buffer);
-
-            *algorithmResult = 1;
-            *startIndex = minBlockIndex;
-        } 
-    }    
+        *algorithmResult = 1;
+        *startIndex = minBlockIndex;
+    }     
 }
 
 int getRandomBetweenTwoNumbers(int lower, int upper){
