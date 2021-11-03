@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     if (argc == 2)
     {
         int lines = atoi(argv[1]);
-        int size = sizeof(short) * lines;
+        int size = sizeof(pthread_t) * lines;
 
         create_shared_mem(size);
         create_log();
@@ -60,16 +60,16 @@ void create_shared_mem(int size)
 
     // https://linux.die.net/man/2/shmdt
     // attaches to shared memory
-    short *mem = shmat(shm_key, NULL, 0);
-    memset(mem, (short)0, size);
+    pthread_t *mem = shmat(shm_key, NULL, 0);
+    memset(mem, (pthread_t)0, size);
 
-    short *exec_mem = shmat(shm_exec_key, NULL, 0);
+    pthread_t *exec_mem = shmat(shm_exec_key, NULL, 0);
     memset(exec_mem, (pthread_t) 0, pid_size*40);
 
-    short *blocked_mem = shmat(shm_blocked_key, NULL, 0);
+    pthread_t *blocked_mem = shmat(shm_blocked_key, NULL, 0);
     memset(blocked_mem, (pthread_t)0, pid_size*40);
 
-    short *current_mem = shmat(shm_current_key, NULL, 0);
+    pthread_t *current_mem = shmat(shm_current_key, NULL, 0);
     memset(current_mem, (pthread_t)0, pid_size);
 }
 
