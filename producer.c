@@ -8,6 +8,15 @@
 #include <string.h>
 #include "constants.h"
 
+void addToCurrentShm(pthread_t *current_shm);
+void removeFromCurrentShm(pthread_t *current_shm);
+
+void addToExecShm(pthread_t *exec_shm);
+void removeFromExecShm(pthread_t *exec_shm);
+
+void addToBlockedShm(pthread_t *blocked_shm);
+void removeFromBlockedShm(pthread_t *blocked_shm);
+
 void create_log(char message[]){
     sem_t *log_mutex = sem_open("Log Mutex", 0);
     sem_wait(log_mutex); // <-- Actual block
@@ -34,12 +43,12 @@ void create_log(char message[]){
 }
 
 void dealocateMemory(int linesSize, int startIndex, int mem_id){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
 
     //set all blocks used back to zero
     int index = startIndex;
     for(int i = 0; i<linesSize; i++){
-        mem[index]=0;
+        mem[index] = 0lu;
         index++;
     }
 
@@ -58,7 +67,7 @@ void dealocateMemory(int linesSize, int startIndex, int mem_id){
 }
 
 void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
 
     int result = 0;
     int countEmpty = 0;
@@ -67,13 +76,13 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             if(countEmpty>=linesSize && countEmpty != 0){
                 //This means a succesful block was found. Proceed to fill it in and break out of loop
                 int numberOfLinesLoop = linesSize;
                 int loopIndex = countStartIndex;
                 while(numberOfLinesLoop>0){
-                    mem[loopIndex] = 1;
+                    mem[loopIndex] = pthread_self();
                     numberOfLinesLoop--;
                     loopIndex++;
                 }
@@ -111,7 +120,7 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 }
 
 void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
     
     int maxSize = 0; // This will hold the size for the biggest block
     int maxBlockIndex = 0; // This will mark the beggining of the biggest block
@@ -123,7 +132,7 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
 
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             
             if(countEmpty >= maxSize && countEmpty>=linesSize){
                 maxSize = countEmpty;
@@ -143,28 +152,28 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
     }
 
     if(maxSize != 0 && maxSize>=linesSize){
-            int numberOfLinesLoop = linesSize;
-            int loopIndex = maxBlockIndex;
-            while(numberOfLinesLoop>0){
-                mem[loopIndex] = 1;
-                numberOfLinesLoop--;
-                loopIndex++;
-            }
+        int numberOfLinesLoop = linesSize;
+        int loopIndex = maxBlockIndex;
+        while(numberOfLinesLoop>0){
+            mem[loopIndex] = pthread_self();
+            numberOfLinesLoop--;
+            loopIndex++;
+        }
 
-            //Buffer        
-            char buffer[200];
+        //Buffer        
+        char buffer[200];
 
-            snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
-            printf("%s", buffer);
-            create_log(buffer);
+        snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+        printf("%s", buffer);
+        create_log(buffer);
 
-            *algorithmResult = 1;
-            *startIndex = maxBlockIndex;
+        *algorithmResult = 1;
+        *startIndex = maxBlockIndex;
     } 
 }
 
 void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
     
     int minSize = __INT_MAX__; // This will hold the size for the smallest block
     int minBlockIndex = 0; // This will mark the beggining of the smallest block
@@ -175,7 +184,7 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
 
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             
             if(countEmpty <= minSize && countEmpty>=linesSize){
                 minSize = countEmpty;
@@ -198,7 +207,7 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
         int numberOfLinesLoop = linesSize;
         int loopIndex = minBlockIndex;
         while(numberOfLinesLoop>0){
-            mem[loopIndex] = 1;
+            mem[loopIndex] = pthread_self();
             numberOfLinesLoop--;
             loopIndex++;
         }
@@ -232,6 +241,10 @@ void *findSpace(void *array){
     int blocked_shm_id = threadParameters[4];
     int current_shm_id = threadParameters[5];
 
+    pthread_t *exec_shm = shmat(exec_shm_id, NULL, 0);
+    pthread_t *blocked_shm = shmat(blocked_shm_id, NULL, 0);
+    pthread_t *current_shm = shmat(current_shm_id, NULL, 0);
+
     //Lines size 1-10
     int lowerLinesLimit = 1;
     int upperLinesLimit = 10;
@@ -256,13 +269,11 @@ void *findSpace(void *array){
 
 
     sem_t *mem_mutex = sem_open("Memory Mutex", 0);
+
+
+    addToBlockedShm(blocked_shm);
+
     sem_wait(mem_mutex); // <-- Actual block
-
-    snprintf(buffer, sizeof(buffer), "Thread id = %lu is using the semaphore\n", pthread_self());
-    printf("%s", buffer);
-    create_log(buffer);
-
-    
 
     int algorithm = threadParameters[0]; //get algorithm type received from CLI
     int algorithmResult = 0;
@@ -281,10 +292,6 @@ void *findSpace(void *array){
             break;
     }
 
-    snprintf(buffer, sizeof(buffer), "Thread id = %lu releases the semaphore\n", pthread_self());
-    printf("%s", buffer);
-    create_log(buffer);
-
     sem_post(mem_mutex); // <-- Semaphore release / unblock
 
     //CRITICAL SECTION END 
@@ -297,11 +304,9 @@ void *findSpace(void *array){
 
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
-        snprintf(buffer, sizeof(buffer), "Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
-        printf("%s", buffer);
-        create_log(buffer);
-
+        printf("Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
+        removeFromExecShm(exec_shm);
     }
 
 
@@ -380,7 +385,7 @@ void removeFromCurrentShm(pthread_t *current_shm){
     current_shm[0] = (pthread_t)0;
 }
 
-void addFromExecShm(pthread_t *exec_shm){
+void addToExecShm(pthread_t *exec_shm){
     for (int i = 0; i < EXEC_SHM_SIZE; i++)
     {
         if (exec_shm[i] == 0lu)
@@ -401,7 +406,7 @@ void removeFromExecShm(pthread_t *exec_shm){
     }
 }
 
-void addFromBlockedShm(pthread_t *blocked_shm){
+void addToBlockedShm(pthread_t *blocked_shm){
     for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
     {
         if (blocked_shm[i] == 0lu)
