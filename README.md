@@ -26,7 +26,7 @@ Una vez que se corre el inicializador, podemos correr el productor.
 
 Mientras el productor de procesos se ejecuta, podemos correr el proceso espía para ver la ejecución de los procesos.
 
-`./spy.out <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm>`
+`./spy.out <número de líneas> <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm>`
 
 ### Finalizar
 
