@@ -36,12 +36,15 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
-        if(mem[i]==1 || i==memLines-1 || countEmpty>=linesSize){
+        if(mem[i]==1 || i==memLines-1){
             if(countEmpty>=linesSize && countEmpty != 0){
                 //This means a succesful block was found. Proceed to fill it in and break out of loop
-
-                for(int j=countStartIndex; j<=countEmpty; j++){
-                    mem[j]=1;
+                int numberOfLinesLoop = linesSize;
+                int loopIndex = countStartIndex;
+                while(numberOfLinesLoop>0){
+                    mem[loopIndex] = 1;
+                    numberOfLinesLoop--;
+                    loopIndex++;
                 }
 
                 printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
@@ -72,11 +75,98 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 }
 
 void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
+    short *mem = shmat(mem_id, NULL, 0);
     
+    int maxSize = 0; // This will hold the size for the biggest block
+    int maxBlockIndex = 0; // This will mark the beggining of the biggest block
+
+    int countEmpty = 0;
+    int countStartIndex = 0;
+
+
+    for(int i=0; i<memLines; i++){
+        //printf("%hu \n", mem[i]);
+
+        if(mem[i]==1 || i==memLines-1){
+            
+            if(countEmpty >= maxSize && countEmpty>=linesSize){
+                maxSize = countEmpty;
+                maxBlockIndex = countStartIndex;
+                countEmpty = 0;
+            } else {
+                countEmpty = 0;
+            }
+
+        } else {
+            //Count empty block
+            if(countEmpty==0){
+                countStartIndex = i;
+            }
+            countEmpty++;
+        }
+
+        if(maxSize != 0 && maxSize>=linesSize){
+            int numberOfLinesLoop = linesSize;
+            int loopIndex = maxBlockIndex;
+            while(numberOfLinesLoop>0){
+                mem[loopIndex] = 1;
+                numberOfLinesLoop--;
+                loopIndex++;
+            }
+
+            printf("Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+
+            *algorithmResult = 1;
+            *startIndex = maxBlockIndex;
+        } 
+    }
 }
 
 void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
+    short *mem = shmat(mem_id, NULL, 0);
     
+    int minSize = __INT_MAX__; // This will hold the size for the smallest block
+    int minBlockIndex = 0; // This will mark the beggining of the smallest block
+
+    int countEmpty = 0;
+    int countStartIndex = 0;
+
+    for(int i=0; i<memLines; i++){
+        //printf("%hu \n", mem[i]);
+
+        if(mem[i]==1 || i==memLines-1){
+            
+            if(countEmpty <= minSize && countEmpty>=linesSize){
+                minSize = countEmpty;
+                minBlockIndex = countStartIndex;
+                countEmpty = 0;
+            } else {
+                countEmpty = 0;
+            }
+
+        } else {
+            //Count empty block
+            if(countEmpty==0){
+                countStartIndex = i;
+            }
+            countEmpty++;
+        }
+
+        if(minSize != __INT_MAX__ && minSize>=linesSize){
+            int numberOfLinesLoop = linesSize;
+            int loopIndex = minBlockIndex;
+            while(numberOfLinesLoop>0){
+                mem[loopIndex] = 1;
+                numberOfLinesLoop--;
+                loopIndex++;
+            }
+
+            printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
+
+            *algorithmResult = 1;
+            *startIndex = minBlockIndex;
+        } 
+    }    
 }
 
 int getRandomBetweenTwoNumbers(int lower, int upper){
