@@ -43,12 +43,12 @@ void create_log(char message[]){
 }
 
 void dealocateMemory(int linesSize, int startIndex, int mem_id){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
 
     //set all blocks used back to zero
     int index = startIndex;
     for(int i = 0; i<linesSize; i++){
-        mem[index]=0;
+        mem[index] = 0lu;
         index++;
     }
 
@@ -67,7 +67,7 @@ void dealocateMemory(int linesSize, int startIndex, int mem_id){
 }
 
 void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
 
     int result = 0;
     int countEmpty = 0;
@@ -76,13 +76,13 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             if(countEmpty>=linesSize && countEmpty != 0){
                 //This means a succesful block was found. Proceed to fill it in and break out of loop
                 int numberOfLinesLoop = linesSize;
                 int loopIndex = countStartIndex;
                 while(numberOfLinesLoop>0){
-                    mem[loopIndex] = 1;
+                    mem[loopIndex] = pthread_self();
                     numberOfLinesLoop--;
                     loopIndex++;
                 }
@@ -120,7 +120,7 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
 }
 
 void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
     
     int maxSize = 0; // This will hold the size for the biggest block
     int maxBlockIndex = 0; // This will mark the beggining of the biggest block
@@ -132,7 +132,7 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
 
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             
             if(countEmpty >= maxSize && countEmpty>=linesSize){
                 maxSize = countEmpty;
@@ -154,7 +154,7 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
             int numberOfLinesLoop = linesSize;
             int loopIndex = maxBlockIndex;
             while(numberOfLinesLoop>0){
-                mem[loopIndex] = 1;
+                mem[loopIndex] = pthread_self();
                 numberOfLinesLoop--;
                 loopIndex++;
             }
@@ -173,7 +173,7 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
 }
 
 void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, int memLines){
-    short *mem = shmat(mem_id, NULL, 0);
+    pthread_t *mem = shmat(mem_id, NULL, 0);
     
     int minSize = __INT_MAX__; // This will hold the size for the smallest block
     int minBlockIndex = 0; // This will mark the beggining of the smallest block
@@ -184,7 +184,7 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
 
-        if(mem[i]==1 || i==memLines-1){
+        if(mem[i] != 0 || i==memLines-1){
             
             if(countEmpty <= minSize && countEmpty>=linesSize){
                 minSize = countEmpty;
@@ -206,7 +206,7 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
             int numberOfLinesLoop = linesSize;
             int loopIndex = minBlockIndex;
             while(numberOfLinesLoop>0){
-                mem[loopIndex] = 1;
+                mem[loopIndex] = pthread_self();
                 numberOfLinesLoop--;
                 loopIndex++;
             }
