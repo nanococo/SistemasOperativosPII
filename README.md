@@ -22,14 +22,14 @@ Luego, corremos el programa inicializador. Nótese que este programa espera el n
 
 Una vez que se corre el inicializador, podemos correr el productor.
 
-`./prod.out`
+`./prod.out <número de líneas> <numero algoritmo> <id_shared_mem> <execId> <blockedId> <currentId>`
 
 Mientras el productor de procesos se ejecuta, podemos correr el proceso espía para ver la ejecución de los procesos.
 
-`./spy.out`
+`./spy.out <número de líneas> <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm>`
 
 ### Finalizar
 
 Para cerrar los recursos y la memoria compartida, así como todos los procesos, se corre el proceso finalizador.
 
-`./dest.out`
+`./dest.out <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm> <archivo> `
