@@ -11,7 +11,7 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
 
 int main(int argc, char **argv)
 {
-    if (argc == 5)
+    if (argc == 6)
     {
         int number_of_lines = atoi(argv[1]);
         int mem_shm_id = atoi(argv[2]);
