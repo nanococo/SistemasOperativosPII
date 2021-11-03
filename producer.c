@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include "constants.h"
 
 void dealocateMemory(int linesSize, int startIndex, int mem_id){
     short *mem = shmat(mem_id, NULL, 0);
@@ -311,4 +312,55 @@ int main(int argc, char **argv)
     //     printf("Error detaching shared memory\n");
     // }
     return 0;
+}
+
+
+void addToCurrentShm(pthread_t *current_shm){
+    current_shm[0] = pthread_self();
+}
+
+void removeFromCurrentShm(pthread_t *current_shm){
+    current_shm[0] = (pthread_t)0;
+}
+
+void addFromExecShm(pthread_t *exec_shm){
+    for (int i = 0; i < EXEC_SHM_SIZE; i++)
+    {
+        if (exec_shm[i] == 0lu)
+        {
+            exec_shm[i] = pthread_self();
+        }
+    }
+}
+
+void removeFromExecShm(pthread_t *exec_shm){
+    pthread_t self = pthread_self();
+    for (int i = 0; i < EXEC_SHM_SIZE; i++)
+    {
+        if (exec_shm[i] == self)
+        {
+            exec_shm[i] = 0lu;
+        }
+    }
+}
+
+void addFromBlockedShm(pthread_t *blocked_shm){
+    for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
+    {
+        if (blocked_shm[i] == 0lu)
+        {
+            blocked_shm[i] = pthread_self();
+        }
+    }
+}
+
+void removeFromBlockedShm(pthread_t *blocked_shm){
+    pthread_t self = pthread_self();
+    for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
+    {
+        if (blocked_shm[i] == self)
+        {
+            blocked_shm[i] = 0lu;
+        }
+    }
 }
