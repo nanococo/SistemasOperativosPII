@@ -13,10 +13,11 @@ int main(int argc, char **argv)
 {
     if (argc == 5)
     {
-        int mem_shm_id = atoi(argv[1]);
-        int exec_shm_id = atoi(argv[2]);
-        int blocked_shm_id = atoi(argv[3]);
-        int current_shm_id = atoi(argv[4]);
+        int number_of_lines = atoi(argv[1]);
+        int mem_shm_id = atoi(argv[2]);
+        int exec_shm_id = atoi(argv[3]);
+        int blocked_shm_id = atoi(argv[4]);
+        int current_shm_id = atoi(argv[5]);
 
         pthread_t *mem_shm = shmat(mem_shm_id, NULL, 0);
         pthread_t *exec_shm = shmat(exec_shm_id, NULL, 0);
@@ -27,7 +28,7 @@ int main(int argc, char **argv)
         sem_t *spy_mutex = sem_open(SPY_MUTEX_NAME, 0);
 
         // ? Deberia evitar que alguno entre a la memoria para imprimir el actual?
-        printMemmory(mem_shm, 5, mem_mutex);
+        printMemmory(mem_shm, number_of_lines, mem_mutex);
         printProcessesStatus(exec_shm,blocked_shm,current_shm,spy_mutex);
     }
     else
