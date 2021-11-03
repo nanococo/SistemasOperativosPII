@@ -355,7 +355,7 @@ int main(int argc, char **argv)
                                        //and when it dies it returns resources to the system
 
             char buffer[200];
-            snprintf(buffer, sizeof(buffer), "New Thread created with id %lu\n", pthread_self());
+            snprintf(buffer, sizeof(buffer), "New Thread created with id %lu\n", thread_id);
             printf("%s", buffer);
             create_log(buffer);
 
