@@ -105,9 +105,9 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
             countEmpty++;
         }
 
-        if(maxSize != 0 && countEmpty>=linesSize){
+        if(maxSize != 0 && maxSize>=linesSize){
             int numberOfLinesLoop = linesSize;
-            int loopIndex = countStartIndex;
+            int loopIndex = maxBlockIndex;
             while(numberOfLinesLoop>0){
                 mem[loopIndex] = 1;
                 numberOfLinesLoop--;
@@ -134,9 +134,9 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
     for(int i=0; i<memLines; i++){
         //printf("%hu \n", mem[i]);
 
-        if((mem[i]==1 || i==memLines-1) && countEmpty>=linesSize){
+        if(mem[i]==1 || i==memLines-1){
             
-            if(countEmpty <= minSize){
+            if(countEmpty <= minSize && countEmpty>=linesSize){
                 minSize = countEmpty;
                 minBlockIndex = countStartIndex;
                 countEmpty = 0;
@@ -152,9 +152,13 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
             countEmpty++;
         }
 
-        if(minSize != __INT_MAX__ && countEmpty>=linesSize){
-            for(int j=minBlockIndex; j<=minSize; j++){
-                mem[j]=1; //
+        if(minSize != __INT_MAX__ && minSize>=linesSize){
+            int numberOfLinesLoop = linesSize;
+            int loopIndex = minBlockIndex;
+            while(numberOfLinesLoop>0){
+                mem[loopIndex] = 1;
+                numberOfLinesLoop--;
+                loopIndex++;
             }
 
             printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
