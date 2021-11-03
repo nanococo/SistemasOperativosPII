@@ -181,6 +181,11 @@ void *findSpace(void *array){
     //Algorithm retrieval
     int *threadParameters = (int *) array;
 
+    //Shared memory ids
+    int exec_shm_id = threadParameters[3];
+    int blocked_shm_id = threadParameters[4];
+    int current_shm_id = threadParameters[5];
+
     //Lines size 1-10
     int lowerLinesLimit = 1;
     int upperLinesLimit = 10;
@@ -247,11 +252,29 @@ void *findSpace(void *array){
     return NULL; //Thread is detached so it will die and return resources
 }
 
+void create_log(char message[]){
+    time_t t = time(NULL);
+    // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
+    struct tm time = *localtime(&t);
+    char logMessage[30];
+
+    sprintf((char *) &logMessage[0], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+    // sprintf((char *) &file_name[23], ".txt");
+    strcat(&logMessage, ": ");
+    strcat(&logMessage, &message);
+    strcat(&logMessage, "\n");
+
+    printf(" %s\n", logMessage);
+
+
+    FILE* file_ptr = fopen("log.txt", "a");
+    fputs(logMessage, file_ptr);
+    fclose(file_ptr);
+}
 
 
 
-
-//args must be mem_id, numberOfLines, algorithm
+//args must be numberOfLines, algorithm, mem_id, execId, blockedId, currentId
 int main(int argc, char **argv)
 {
     srand(time(0)); //This sets the random seed based on time
@@ -260,9 +283,13 @@ int main(int argc, char **argv)
     int lowerLifeLimit = 10;
     int upperLifeLimit = 15;
 
+    int exec_shm_id = atoi(argv[4]);
+    int blocked_shm_id = atoi(argv[5]);
+    int current_shm_id = atoi(argv[6]);
+
     //Algorithm to use for threads. Reads it from argv[3]. Must be numeric
     int algorithm = 0;
-    if(sscanf(argv[3], "%i", &algorithm) != 1){
+    if(sscanf(argv[2], "%i", &algorithm) != 1){
         printf("Error: Parameter is not numeric.\n");
     } else if (algorithm > 3 || algorithm < 1){
         printf("Error: Not a valid parameter for memory algorithms.\n");
@@ -270,12 +297,18 @@ int main(int argc, char **argv)
         
         while(1){
             int sleepTime = getRandomBetweenTwoNumbers(lowerLifeLimit, upperLifeLimit);
-            int arguments[3] = {algorithm, atoi(argv[1]), atoi(argv[2])}; //this will be passed as the argument
+            int arguments[6] = {algorithm, atoi(argv[3]), atoi(argv[1]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6])}; //this will be passed as the argument
 
             pthread_t thread_id;
             pthread_create(&thread_id, NULL, findSpace, (void *)arguments);
             pthread_detach(thread_id); //I don't care about what this thread does, so I detatch it 
                                        //and when it dies it returns resources to the system
+
+            char buffer[200];
+            snprintf(buffer, sizeof(buffer), "New Thread created with id %lu\n", pthread_self());
+            printf("%s", buffer);
+            create_log(buffer);
+        
             printf("New Thread created with id %lu\n", pthread_self());
             printf("Creator main method sleeping for %d seconds\n", sleepTime);
             sleep(sleepTime);

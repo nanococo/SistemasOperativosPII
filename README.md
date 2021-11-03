@@ -22,7 +22,7 @@ Luego, corremos el programa inicializador. Nótese que este programa espera el n
 
 Una vez que se corre el inicializador, podemos correr el productor.
 
-`./prod.out <id_shared_mem> <número de líneas> <numero algoritmo>`
+`./prod.out <número de líneas> <numero algoritmo> <id_shared_mem> <execId> <blockedId> <currentId>`
 
 Mientras el productor de procesos se ejecuta, podemos correr el proceso espía para ver la ejecución de los procesos.
 

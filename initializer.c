@@ -78,15 +78,7 @@ void create_log()
     time_t t = time(NULL);
     // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
     struct tm time = *localtime(&t);
-    char file_name[30] = "log_";
-
-    sprintf((char *) &file_name[4], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
-    // sprintf((char *) &file_name[23], ".txt");
-    strcat(&file_name, ".txt");
-
-    printf(" %s\n", file_name);
-
-    FILE* file_ptr = fopen(file_name, "w");
-    fputs("File created", file_ptr);
+    FILE* file_ptr = fopen("log.txt", "w");
+    fputs("File created\n", file_ptr);
     fclose(file_ptr);
 }
