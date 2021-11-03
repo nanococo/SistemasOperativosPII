@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <pthread.h>
+#include "constants.h"
 
 void create_shared_mem(int size);
 void create_log();
@@ -23,13 +24,13 @@ int main(int argc, char **argv)
 
         // creates semaphore for shared memory access
         // https://man7.org/linux/man-pages/man3/sem_open.3.html
-        sem_t *mem_mutex = sem_open("Memory Mutex", O_CREAT | O_EXCL, 0644, 1);
+        sem_t *mem_mutex = sem_open(MEMORY_MUTEX_NAME, O_CREAT | O_EXCL, 0644, 1);
 
         // creates semaphore for log access
-        sem_t *log_mutex = sem_open("Log Mutex", O_CREAT | O_EXCL, 0644, 1);
+        sem_t *log_mutex = sem_open(LOG_MUTEX_NAME, O_CREAT | O_EXCL, 0644, 1);
 
         // creates semaphore for spy info
-        sem_t *spy_mutex = sem_open("Spy Mutex", O_CREAT | O_EXCL, 0644, 1);
+        sem_t *spy_mutex = sem_open(SPY_MUTEX_NAME, O_CREAT | O_EXCL, 0644, 1);
 
         sem_close(mem_mutex);
         sem_close(log_mutex);
@@ -56,7 +57,7 @@ void create_shared_mem(int size)
     int shm_exec_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
     int shm_blocked_key = shmget(IPC_PRIVATE, pid_size*40, IPC_CREAT | IPC_EXCL | 0666);
     int shm_current_key = shmget(IPC_PRIVATE, pid_size, IPC_CREAT | IPC_EXCL | 0666);
-    printf("Destroyer params: %d %d %d %d", shm_key, shm_exec_key, shm_blocked_key, shm_current_key);
+    printf("Destroyer params: %d %d %d %d %s \n", shm_key, shm_exec_key, shm_blocked_key, shm_current_key, LOG_FILE_NAME);
 
     // https://linux.die.net/man/2/shmdt
     // attaches to shared memory
@@ -78,7 +79,7 @@ void create_log()
     time_t t = time(NULL);
     // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
     struct tm time = *localtime(&t);
-    FILE* file_ptr = fopen("log.txt", "w");
+    FILE* file_ptr = fopen(LOG_FILE_NAME, "w");
     fputs("File created\n", file_ptr);
     fclose(file_ptr);
 }

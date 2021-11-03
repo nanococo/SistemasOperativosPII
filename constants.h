@@ -6,3 +6,6 @@ const int BLOCKED_SHM_SIZE = 40;
 const char MEMORY_MUTEX_NAME[] = "Memory Mutex";
 const char LOG_MUTEX_NAME[] = "Log Mutex";
 const char SPY_MUTEX_NAME[] = "Spy Mutex";
+
+
+const char LOG_FILE_NAME[] = "log.txt";

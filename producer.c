@@ -10,7 +10,7 @@
 void addToCurrentShm(pthread_t *current_shm);
 void removeFromCurrentShm(pthread_t *current_shm);
 
-void addToxecShm(pthread_t *exec_shm);
+void addToExecShm(pthread_t *exec_shm);
 void removeFromExecShm(pthread_t *exec_shm);
 
 void addToBlockedShm(pthread_t *blocked_shm);
