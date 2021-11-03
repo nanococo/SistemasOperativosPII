@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 #include "constants.h"
 
 void addToCurrentShm(pthread_t *current_shm);
@@ -16,6 +17,31 @@ void removeFromExecShm(pthread_t *exec_shm);
 void addToBlockedShm(pthread_t *blocked_shm);
 void removeFromBlockedShm(pthread_t *blocked_shm);
 
+void create_log(char message[]){
+    sem_t *log_mutex = sem_open("Log Mutex", 0);
+    sem_wait(log_mutex); // <-- Actual block
+
+    time_t t = time(NULL);
+    // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
+    struct tm time = *localtime(&t);
+    char logMessage[1024];
+
+    sprintf((char *) &logMessage[0], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+    // sprintf((char *) &file_name[23], ".txt");
+    strcat(logMessage, ": ");
+    strcat(logMessage, message);
+    strcat(logMessage, "\n");
+
+    printf(" %s\n", logMessage);
+
+
+    FILE* file_ptr = fopen("log.txt", "a");
+    fputs(logMessage, file_ptr);
+    fclose(file_ptr);
+
+    sem_post(log_mutex); // <-- Actual block
+}
+
 void dealocateMemory(int linesSize, int startIndex, int mem_id){
     short *mem = shmat(mem_id, NULL, 0);
 
@@ -26,8 +52,12 @@ void dealocateMemory(int linesSize, int startIndex, int mem_id){
         index++;
     }
 
+    //Buffer        
+    char buffer[200];
 
-    printf("Succesfully dealocated memory for thread id = %lu\n", pthread_self());
+    snprintf(buffer, sizeof(buffer), "Succesfully dealocated memory for thread id = %lu\n", pthread_self());
+    printf("%s", buffer);
+    create_log(buffer);
 
     int detach_status = shmdt(mem);
     if (detach_status < 0)
@@ -57,7 +87,12 @@ void firstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
                     loopIndex++;
                 }
 
-                printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
+                //Buffer        
+                char buffer[200];
+
+                snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+                printf("%s", buffer);
+                create_log(buffer);
 
                 *algorithmResult = 1;
                 *startIndex = countStartIndex;
@@ -124,7 +159,12 @@ void bestFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, i
                 loopIndex++;
             }
 
-            printf("Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+            //Buffer        
+            char buffer[200];
+
+            snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+            printf("%s", buffer);
+            create_log(buffer);
 
             *algorithmResult = 1;
             *startIndex = maxBlockIndex;
@@ -171,7 +211,12 @@ void worstFit(int linesSize, int *algorithmResult, int *startIndex, int mem_id, 
                 loopIndex++;
             }
 
-            printf("Succesfully alocated memory for thread id = %lu witn %d lines\n", pthread_self(), linesSize);
+            //Buffer        
+            char buffer[200];
+
+            snprintf(buffer, sizeof(buffer), "Succesfully alocated memory for thread id = %lu with %d lines\n", pthread_self(), linesSize);
+            printf("%s", buffer);
+            create_log(buffer);
 
             *algorithmResult = 1;
             *startIndex = minBlockIndex;
@@ -212,19 +257,23 @@ void *findSpace(void *array){
     int linesSize = getRandomBetweenTwoNumbers(lowerLinesLimit, upperLinesLimit);
     int sleepTime = getRandomBetweenTwoNumbers(lowerTimeLimit, upperTimeLimit);
 
+    //Buffer
+    char buffer[200];
+
     //CRITICAL SECTION START 
     //--------------------------------------------------------------------------------------------
     //Here is where each thread must select the memory area. Only one thread is allowed to use the selection algorithms.
+    snprintf(buffer, sizeof(buffer), "Thread id = %lu is waiting for semaphore\n", pthread_self());
+    printf("%s", buffer);
+    create_log(buffer);
+
+
     sem_t *mem_mutex = sem_open("Memory Mutex", 0);
 
 
     addToBlockedShm(blocked_shm);
 
     sem_wait(mem_mutex); // <-- Actual block
-
-    removeFromBlockedShm(blocked_shm);
-
-    addToCurrentShm(current_shm);
 
     int algorithm = threadParameters[0]; //get algorithm type received from CLI
     int algorithmResult = 0;
@@ -243,18 +292,19 @@ void *findSpace(void *array){
             break;
     }
 
-    removeFromCurrentShm(current_shm);
     sem_post(mem_mutex); // <-- Semaphore release / unblock
 
     //CRITICAL SECTION END 
     //--------------------------------------------------------------------------------------------
-
+    
     if(algorithmResult!=1){
-        printf("Thread id = %lu did not find space. Needed %d\n", pthread_self(), linesSize);
+        snprintf(buffer, sizeof(buffer), "Thread id = %lu did not find space. Needed %d\n", pthread_self(), linesSize);
+        printf("%s", buffer);
+        create_log(buffer);
+
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
         printf("Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
-        addToExecShm(exec_shm);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
         removeFromExecShm(exec_shm);
     }
@@ -275,26 +325,6 @@ void *findSpace(void *array){
 
 
     return NULL; //Thread is detached so it will die and return resources
-}
-
-void create_log(char message[]){
-    time_t t = time(NULL);
-    // https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
-    struct tm time = *localtime(&t);
-    char logMessage[30];
-
-    sprintf((char *) &logMessage[0], "%d-%d-%d_%d:%d:%d", time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
-    // sprintf((char *) &file_name[23], ".txt");
-    strcat(&logMessage, ": ");
-    strcat(&logMessage, &message);
-    strcat(&logMessage, "\n");
-
-    printf(" %s\n", logMessage);
-
-
-    FILE* file_ptr = fopen("log.txt", "a");
-    fputs(logMessage, file_ptr);
-    fclose(file_ptr);
 }
 
 
@@ -330,44 +360,19 @@ int main(int argc, char **argv)
                                        //and when it dies it returns resources to the system
 
             char buffer[200];
-            snprintf(buffer, sizeof(buffer), "New Thread created with id %lu\n", pthread_self());
+            snprintf(buffer, sizeof(buffer), "New Thread created with id %lu\n", thread_id);
+            printf("%s", buffer);
+            create_log(buffer);
+
+            snprintf(buffer, sizeof(buffer), "Creator main method sleeping for %d seconds\n", sleepTime);
             printf("%s", buffer);
             create_log(buffer);
         
-            printf("New Thread created with id %lu\n", pthread_self());
-            printf("Creator main method sleeping for %d seconds\n", sleepTime);
             sleep(sleepTime);
         }
 
     }
 
-
-
-
-    
-    // // attach to the shared memory address
-    // int mem_id = atoi(argv[1]);
-    // short *mem = shmat(mem_id, NULL, 0);
-
-    // sem_t *mem_mutex = sem_open("Memory Mutex", 0);
-    // sem_t *log_mutex = sem_open("Log Mutex", 0);
-
-    // sem_wait(mem_mutex);
-
-    // // write in shared memory address
-    // mem[0] = 8; // dummy test
-
-    // sem_post(mem_mutex);
-
-    // // sem_close(mem_mutex);
-    // // sem_close(log_mutex);
-
-    // // detach from shared memory address
-    // int detach_status = shmdt(mem);
-    // if (detach_status < 0)
-    // {
-    //     printf("Error detaching shared memory\n");
-    // }
     return 0;
 }
 
