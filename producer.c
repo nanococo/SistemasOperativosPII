@@ -305,6 +305,7 @@ void *findSpace(void *array){
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
         printf("Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
+        addToExecShm(exec_shm);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
         removeFromExecShm(exec_shm);
     }
@@ -391,6 +392,7 @@ void addToExecShm(pthread_t *exec_shm){
         if (exec_shm[i] == 0lu)
         {
             exec_shm[i] = pthread_self();
+            break;
         }
     }
 }
@@ -412,6 +414,7 @@ void addToBlockedShm(pthread_t *blocked_shm){
         if (blocked_shm[i] == 0lu)
         {
             blocked_shm[i] = pthread_self();
+            break;
         }
     }
 }
