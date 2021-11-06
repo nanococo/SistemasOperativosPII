@@ -275,6 +275,9 @@ void *findSpace(void *array){
 
     sem_wait(mem_mutex); // <-- Actual block
 
+    removeFromBlockedShm(blocked_shm);
+    addToCurrentShm(current_shm);
+
     int algorithm = threadParameters[0]; //get algorithm type received from CLI
     int algorithmResult = 0;
     int startIndex = 0;
@@ -292,6 +295,7 @@ void *findSpace(void *array){
             break;
     }
 
+    removeFromCurrentShm(current_shm);
     sem_post(mem_mutex); // <-- Semaphore release / unblock
 
     //CRITICAL SECTION END 
@@ -379,10 +383,12 @@ int main(int argc, char **argv)
 
 
 void addToCurrentShm(pthread_t *current_shm){
+    printf("ADD TO CURRENT");
     current_shm[0] = pthread_self();
 }
 
 void removeFromCurrentShm(pthread_t *current_shm){
+    printf("REMOVE FROM CURRENT");
     current_shm[0] = (pthread_t)0;
 }
 
@@ -413,6 +419,7 @@ void addToBlockedShm(pthread_t *blocked_shm){
     {
         if (blocked_shm[i] == 0lu)
         {
+            printf("BLOQUEA");
             blocked_shm[i] = pthread_self();
             break;
         }
@@ -425,6 +432,7 @@ void removeFromBlockedShm(pthread_t *blocked_shm){
     {
         if (blocked_shm[i] == self)
         {
+            printf("DES BLOQUEA");
             blocked_shm[i] = 0lu;
         }
     }
