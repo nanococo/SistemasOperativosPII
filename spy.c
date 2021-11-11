@@ -61,6 +61,8 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
 
     printf("Blocked Processes: \n");
 
+    sem_wait(mutex);
+
     for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
     {
         pthread_t pid = blocked_shm[i];
@@ -81,4 +83,6 @@ void printProcessesStatus(pthread_t *exec_shm, pthread_t *blocked_shm, pthread_t
         }
     }
     
+    sem_post(mutex);
+
 }
