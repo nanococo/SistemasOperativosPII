@@ -32,4 +32,4 @@ Mientras el productor de procesos se ejecuta, podemos correr el proceso espía p
 
 Para cerrar los recursos y la memoria compartida, así como todos los procesos, se corre el proceso finalizador.
 
-`./dest.out <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm> <archivo> `
+`./dest.out <id_shared_mem> <id hilos en ejecucion shm> <id hilos bloqueados shm> <id hilo actual shm> <archivo> <id proceso prod> `

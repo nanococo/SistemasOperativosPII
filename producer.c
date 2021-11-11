@@ -8,14 +8,14 @@
 #include <string.h>
 #include "constants.h"
 
-void addToCurrentShm(pthread_t *current_shm);
-void removeFromCurrentShm(pthread_t *current_shm);
+void addToCurrentShm(pthread_t *current_shm, sem_t *mutex);
+void removeFromCurrentShm(pthread_t *current_shm, sem_t *mutex);
 
-void addToExecShm(pthread_t *exec_shm);
-void removeFromExecShm(pthread_t *exec_shm);
+void addToExecShm(pthread_t *exec_shm, sem_t *mutex);
+void removeFromExecShm(pthread_t *exec_shm, sem_t *mutex);
 
-void addToBlockedShm(pthread_t *blocked_shm);
-void removeFromBlockedShm(pthread_t *blocked_shm);
+void addToBlockedShm(pthread_t *blocked_shm, sem_t *mutex);
+void removeFromBlockedShm(pthread_t *blocked_shm, sem_t *mutex);
 
 void create_log(char message[]){
     sem_t *log_mutex = sem_open("Log Mutex", 0);
@@ -269,11 +269,15 @@ void *findSpace(void *array){
 
 
     sem_t *mem_mutex = sem_open("Memory Mutex", 0);
+    sem_t *spy_mutex = sem_open(SPY_MUTEX_NAME, 0);
 
 
-    addToBlockedShm(blocked_shm);
+    addToBlockedShm(blocked_shm, spy_mutex);
 
     sem_wait(mem_mutex); // <-- Actual block
+
+    removeFromBlockedShm(blocked_shm, spy_mutex);
+    addToCurrentShm(current_shm, spy_mutex);
 
     int algorithm = threadParameters[0]; //get algorithm type received from CLI
     int algorithmResult = 0;
@@ -292,6 +296,7 @@ void *findSpace(void *array){
             break;
     }
 
+    removeFromCurrentShm(current_shm, spy_mutex);
     sem_post(mem_mutex); // <-- Semaphore release / unblock
 
     //CRITICAL SECTION END 
@@ -305,8 +310,9 @@ void *findSpace(void *array){
         pthread_exit(0); //If algoirhtm did not find space then kill thread. 
     } else {
         printf("Thread id = %lu sleeping for %d\n", pthread_self(), sleepTime);
+        addToExecShm(exec_shm, spy_mutex);
         sleep(sleepTime); //If it was succesful then sleep for the indicated time.
-        removeFromExecShm(exec_shm);
+        removeFromExecShm(exec_shm, spy_mutex);
     }
 
 
@@ -377,26 +383,34 @@ int main(int argc, char **argv)
 }
 
 
-void addToCurrentShm(pthread_t *current_shm){
+void addToCurrentShm(pthread_t *current_shm, sem_t *mutex){
+    sem_wait(mutex);
     current_shm[0] = pthread_self();
+    sem_post(mutex);
 }
 
-void removeFromCurrentShm(pthread_t *current_shm){
+void removeFromCurrentShm(pthread_t *current_shm, sem_t *mutex){
+    sem_wait(mutex);
     current_shm[0] = (pthread_t)0;
+    sem_post(mutex);
 }
 
-void addToExecShm(pthread_t *exec_shm){
+void addToExecShm(pthread_t *exec_shm, sem_t *mutex){
+    sem_wait(mutex);
     for (int i = 0; i < EXEC_SHM_SIZE; i++)
     {
         if (exec_shm[i] == 0lu)
         {
             exec_shm[i] = pthread_self();
+            break;
         }
     }
+    sem_post(mutex);
 }
 
-void removeFromExecShm(pthread_t *exec_shm){
+void removeFromExecShm(pthread_t *exec_shm, sem_t *mutex){
     pthread_t self = pthread_self();
+    sem_wait(mutex);
     for (int i = 0; i < EXEC_SHM_SIZE; i++)
     {
         if (exec_shm[i] == self)
@@ -404,20 +418,25 @@ void removeFromExecShm(pthread_t *exec_shm){
             exec_shm[i] = 0lu;
         }
     }
+    sem_post(mutex);
 }
 
-void addToBlockedShm(pthread_t *blocked_shm){
+void addToBlockedShm(pthread_t *blocked_shm, sem_t *mutex){
+    sem_wait(mutex);
     for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
     {
         if (blocked_shm[i] == 0lu)
         {
             blocked_shm[i] = pthread_self();
+            break;
         }
     }
+    sem_post(mutex);
 }
 
-void removeFromBlockedShm(pthread_t *blocked_shm){
+void removeFromBlockedShm(pthread_t *blocked_shm, sem_t *mutex){
     pthread_t self = pthread_self();
+    sem_wait(mutex);
     for (int i = 0; i < BLOCKED_SHM_SIZE; i++)
     {
         if (blocked_shm[i] == self)
@@ -425,4 +444,5 @@ void removeFromBlockedShm(pthread_t *blocked_shm){
             blocked_shm[i] = 0lu;
         }
     }
+    sem_post(mutex);
 }
